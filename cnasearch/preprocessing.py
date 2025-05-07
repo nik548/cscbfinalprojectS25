@@ -25,6 +25,10 @@ def preprocess(
     target_sum: float = 1e4,
     log1p: bool = True,
     densify: bool = False
+
+    # gene annotation
+    annotate_if_missing: bool = True,
+    gene_col: Optional[str] = None
 ) -> sc.AnnData:
     """
     Memory-efficient preprocessing pipeline for scRNA-seq before CNA calling.
@@ -51,6 +55,10 @@ def preprocess(
         Whether to log1p transform after normalization
     densify : bool, default=False
         Whether to convert sparse matrix to dense
+    annotate_if_missing : bool, default=True
+        Whether to annotate genes if genomic coordinates are missing
+    gene_col : Optional[str], default=None
+        Column in adata.var to use for gene IDs when annotating
 
     Returns
     -------
@@ -85,7 +93,22 @@ def preprocess(
         sc.pp.filter_genes(adata, min_cells=min_cells_per_gene)
         print(f"[QC] Retained {adata.n_vars} genes after min_cells_per_gene={min_cells_per_gene}")
     
-    # 4. Drop genes lacking coordinates and restrict chromosomes
+    # 4. Annotate, drop genes lacking coordinates, and restrict chromosomes
+    coord_cols = ['chromosome', 'start', 'end']
+    missing_cols = [col for col in coord_cols if col not in adata.var.columns]
+    
+    if missing_cols:
+        print(f"[QC] Missing genomic coordinate columns: {', '.join(missing_cols)}")
+        if annotate_if_missing:
+            print("[QC] Annotating genes with genomic coordinates...")
+            from .genomics import annotate_genes_mygene
+            adata = annotate_genes_mygene(adata, gene_col=gene_col, drop_missing=True)
+        else:
+            print("[QC] Skipping annotation as annotate_if_missing=False")
+            # Initialize empty columns to avoid errors in the next steps
+            for col in missing_cols:
+                adata.var[col] = None
+    
     var = adata.var.dropna(subset=['chromosome', 'start', 'end'])
     if allowed_chromosomes is not None:
         var = var[var['chromosome'].astype(str).isin(allowed_chromosomes)]
