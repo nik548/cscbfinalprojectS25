@@ -30,6 +30,7 @@ pip install git+https://github.com/nik548/cscbfinalprojectS25.git
 Then
 ```python
 import genecnv as genecnv
+```
 
 ## Quick Start
 
@@ -65,30 +66,29 @@ import cnasearch as cna
 ```
 ### Apply Pipeline to Detect CNAs
 ```python
-# Load your data
+import scanpy as sc
+from genecnv import run_adaptive_cnv_pipeline, annotate_cnv_calls
+
+# Load or create an AnnData object (adata)
 adata = sc.read_h5ad("your_data.h5ad")
 
-# Preprocess the data
-adata = cna.preprocess(adata)
+# (Optional) annotate genes if coordinates missing
+adata = annotate_genes_mygene(adata)
 
-# Run the CNA detection pipeline
-cna_summary = cna.run_cna_pipeline_robust(
+# Run the full CNV pipeline
+adata, bins, centers, calls = run_adaptive_cnv_pipeline(
     adata,
-    window_size=1_000_000,
-    min_genes_per_window=10,
-    ref_method='variance',
-    ref_frac=0.15,
-    min_run=2,
-    prob_thresh=0.5
+    cell_type_key="cell_type",
+    target_genes_per_bin=100,
+    decay_scale=1e6,
+    decay_radius=10,
+    reference_frac=0.15,
+    min_run=2
 )
 
-# Add annotations to the AnnData object
-adata = cna.add_cna_annotations_to_obs(
-    adata,
-    pd.DataFrame(cna_summary),
-    window_size=1_000_000,
-    min_genes_per_window=10
-)
+# Extract CNV regions per cell
+cnv_regions = adata.obs["cnv_regions"]
+
 
 # Now adata.obs contains CNA annotations ("cna_regions")
 ```
