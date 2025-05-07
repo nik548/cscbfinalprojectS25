@@ -33,7 +33,7 @@ Then
 import genecnv as genecnv
 ```
 
-## Quick Start (For usage in Jupyter Notebook)
+## Jupyter Notebook Quickstart
 
 ### Setup
 ```python
@@ -67,9 +67,7 @@ import genecnv as genecnv
 
 ### Apply Pipeline to Detect CNAs
 ```python
-from genecnv.pipeline import run_adaptive_cnv_pipeline, annotate_cnv_calls
-from genecnv.annotate import annotate_genes_mygene
-from genecnv.preprocess import preprocess
+from genecnv import run_adaptive_cnv_pipeline, annotate_cnv_calls, annotate_genes_mygene, preprocess
 
 # Load or create an AnnData object (adata)
 adata = sc.read_h5ad("your_data.h5ad")
