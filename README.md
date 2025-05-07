@@ -4,9 +4,8 @@ CNAsearch is a Python package for detecting Copy Number Alterations (CNAs) in si
 
 - Computational Stem Cell Biology Final Project Spring 2025
 - Nikhil Choudhary, Dhruv Dubey, Elizabeth Zuerbilis
-- Johns Hopkins University EN.580.447 
+- Johns Hopkins University EN.580.447
 
-ALL OF THIS BELOW NEEDS TO BE TESTED AND VALIDATED (Currently all GPT):
 
 ## Installation
 
@@ -17,7 +16,7 @@ import cnasearch as cna
 
 ## Features
 
-- Gene-based windowing for genomic regions
+- Genomic windows constructed across chromosomes
 - Reference cell selection for baseline expression
 - HMM-based CNA calling with probabilistic outputs
 - Multi-window filtering for robust CNA detection
@@ -25,10 +24,37 @@ import cnasearch as cna
 
 ## Quick Start
 
+### Setup
 ```python
-import scanpy as sc
-import cnasearch as cna
+!pip install scanpy python-igraph leidenalg scipy umap-learn anndata hmmlearn
 
+from google.colab import drive
+drive.mount('/content/drive')
+%cd /content/drive/My Drive/CSCB_Final/
+%ls
+
+import warnings
+warnings.filterwarnings("ignore", category=FutureWarning)
+import os, sys
+import numpy as np
+import pandas as pd
+import matplotlib.pyplot as plt
+import scanpy as sc
+import anndata as ad
+from sklearn.metrics import f1_score
+import seaborn as sns
+from typing import List, Dict, Optional, Tuple
+from scipy.stats import zscore
+from scipy.sparse import csr_matrix, issparse
+import re
+from sklearn.cluster import KMeans
+from hmmlearn import hmm
+
+!pip install git+https://github.com/nik548/cscbfinalprojectS25.git
+import cnasearch as cna
+```
+### Apply Pipeline to Detect CNAs
+```python
 # Load your data
 adata = sc.read_h5ad("your_data.h5ad")
 
@@ -54,7 +80,7 @@ adata = cna.add_cna_annotations_to_obs(
     min_genes_per_window=10
 )
 
-# Now adata.obs contains CNA annotations
+# Now adata.obs contains CNA annotations ("cna_regions")
 ```
 
 ## Advanced Usage
@@ -79,12 +105,8 @@ See the examples directory for more detailed use cases.
 
 ## Citation
 
-If you use CNAsearch in your research, please cite:
-
-```
-Your Citation Here
-```
+If you use CNAsearch in your research, please cite us.
 
 ## License
 
-This project is licensed under the MIT License - see the LICENSE file for details.
+This project is constructed by undergraduate students at Johns Hopkins University.
