@@ -26,7 +26,7 @@ setup(
         "matplotlib>=3.3",
         "seaborn>=0.11",
         "python-igraph>=0.9",
-        "mygene>=3.3",
+        "mygene>=3.2",
     ],
     python_requires=">=3.8",
     entry_points={
