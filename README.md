@@ -2,9 +2,9 @@
 
 CNAsearch is a Python package for detecting Copy Number Alterations (CNAs) in single-cell RNA-seq data, particularly optimized for Pluripotent Stem Cells (PSCs).
 
-Computational Stem Cell Biology Final Project Spring 2025
-Nikhil Choudhary, Dhruv Dubey, Elizabeth Zuerbilis
-Johns Hopkins University EN.580.447 
+- Computational Stem Cell Biology Final Project Spring 2025
+- Nikhil Choudhary, Dhruv Dubey, Elizabeth Zuerbilis
+- Johns Hopkins University EN.580.447 
 
 
 ## Installation
