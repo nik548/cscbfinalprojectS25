@@ -11,7 +11,8 @@ def annotate_genes_mygene(
     adata: ad.AnnData,
     gene_col: str = None,
     scopes: list = ['symbol', 'ensembl.gene', 'entrezgene'],
-    drop_missing: bool = True
+    drop_missing: bool = True,
+    only_std_chromosomes: bool = True  # New parameter
 ) -> ad.AnnData:
     """
     Annotate genes with genomic coordinates using MyGene.info API.
@@ -26,6 +27,8 @@ def annotate_genes_mygene(
         Fields to search for gene IDs (see MyGene.info documentation)
     drop_missing : bool, default=True
         Whether to drop genes that lack coordinate information
+    only_std_chromosomes : bool, default=True
+        If True, only keep genes on standard chromosomes (1-22, X, Y)
     
     Returns
     -------
@@ -168,11 +171,44 @@ def annotate_genes_mygene(
         var_filtered = var.dropna(subset=['chromosome', 'start', 'end'])
         print(f"Dropped {var.shape[0] - var_filtered.shape[0]} genes without coordinates.")
         
+        # Filter to only include standard chromosomes if requested
+        if only_std_chromosomes:
+            # Define standard chromosomes
+            std_chroms = [str(i) for i in range(1, 23)] + ['X', 'Y']
+            
+            # Count before filtering
+            pre_filter_count = var_filtered.shape[0]
+            
+            # Filter to standard chromosomes
+            chrom_col = var_filtered['chromosome'].astype(str)
+            var_filtered = var_filtered[chrom_col.isin(std_chroms)]
+            
+            # Report results
+            print(f"Kept only standard chromosomes (1-22, X, Y): {var_filtered.shape[0]} genes")
+            print(f"Removed {pre_filter_count - var_filtered.shape[0]} genes on non-standard chromosomes")
+        
         # Create new AnnData with filtered genes
         adata_filtered = adata[:, var_filtered.index].copy()
         adata_filtered.var = var_filtered
         return adata_filtered
     else:
+        # Apply standard chromosome filter if requested
+        if only_std_chromosomes:
+            # Define standard chromosomes
+            std_chroms = [str(i) for i in range(1, 23)] + ['X', 'Y']
+            
+            # Identify genes on standard chromosomes
+            chrom_col = var['chromosome'].astype(str)
+            std_chrom_mask = chrom_col.isin(std_chroms)
+            
+            # Report filtering
+            non_std_count = (~std_chrom_mask & ~var['chromosome'].isnull()).sum()
+            print(f"Keeping {std_chrom_mask.sum()} genes on standard chromosomes (1-22, X, Y)")
+            print(f"Ignoring {non_std_count} genes on non-standard chromosomes")
+            
+            # Set non-standard chromosomes to null
+            var.loc[~std_chrom_mask, ['chromosome', 'start', 'end']] = None
+            
         # Update the original AnnData object
         adata.var = var
         return adata
