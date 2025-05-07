@@ -13,7 +13,8 @@ from .expression import bin_expression_matrix
 from .smoothing import log_decay_smoothing
 from .baseline import reference_center
 from .segmentation import call_hmm, run_length_filter
-from .metrics import compute_metrics, tune_hyperparameters
+from .preprocessing import preprocess
+
 
 # package‑level API
 __all__ = [
@@ -25,6 +26,5 @@ __all__ = [
     "reference_center",
     "call_hmm",
     "run_length_filter",
-    "compute_metrics",
-    "tune_hyperparameters",
+    "preprocess"
 ]
