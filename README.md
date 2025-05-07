@@ -90,7 +90,7 @@ adata_with_calls, bins, centers, calls = run_adaptive_cnv_pipeline(
     min_run=2
 )
 
-annotate_cnv_calls(adata_with_calls, calls, bins, centers, test = True)
+annotate_cnv_calls(adata_with_calls, calls, bins, centers)
 # Now adata.obs contains CNA annotations ("cnv_regions")
 
 ```
