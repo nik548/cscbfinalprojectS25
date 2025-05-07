@@ -33,7 +33,7 @@ Then
 import genecnv as genecnv
 ```
 
-## Quick Start
+## Quick Start (For usage in Jupyter Notebook)
 
 ### Setup
 ```python
