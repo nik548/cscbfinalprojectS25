@@ -1,26 +1,35 @@
-# CNAsearch
+# genecnv
 
-CNAsearch is a Python package for detecting Copy Number Alterations (CNAs) in single-cell RNA-seq data, particularly optimized for Pluripotent Stem Cells (PSCs).
+Adaptive gene‑centric CNV calling pipeline for single‑cell data.
 
 - Computational Stem Cell Biology Final Project Spring 2025
 - Nikhil Choudhary, Dhruv Dubey, Elizabeth Zuerbilis
 - Johns Hopkins University EN.580.447
+- 
+## Overview
 
+**genecnv** provides a complete pipeline to detect copy number variations (CNVs) at the gene level in single-cell RNA‑seq datasets. It implements a novel _adaptive gene‑centric binning_ strategy that partitions the genome into bins of approximately equal gene count, preserving local genomic context while enabling robust statistical smoothing and HMM segmentation.
+
+### Key Features
+
+- **Adaptive gene‑centric binning**: dynamically groups genes into sequential bins ordered by chromosome and position, ensuring balanced signal aggregation and preserving genomic structure.  
+- **Expression binning**: computes per-cell average expression across adaptive bins.  
+- **Log‑decay smoothing**: weights neighboring bins by genomic distance using a logarithmic decay kernel.  
+- **Reference centering**: centers smoothed signals against a user‑defined reference cell population or fraction.  
+- **HMM segmentation & run‑length filtering**: calls gains/losses with a 3‑state Gaussian HMM and removes isolated calls below a minimum run length.  
+- **Gene annotation**: integrates with MyGene.info to annotate gene coordinates when not provided.  
+- **End‑to‑end pipeline**: single function to execute preprocessing through CNV call annotation.  
 
 ## Installation
 
+This package is not on PyPI. Install directly from GitHub:
+
 ```bash
-!pip install git+https://github.com/nik548/cscbfinalprojectS25.git
-import cnasearch as cna
-```
+pip install git+https://github.com/nik548/cscbfinalprojectS25.git
 
-## Features
-
-- Genomic windows constructed across chromosomes
-- Reference cell selection for baseline expression
-- HMM-based CNA calling with probabilistic outputs
-- Multi-window filtering for robust CNA detection
-- Evaluation and threshold calibration tools
+Then
+```python
+import genecnv as genecnv
 
 ## Quick Start
 
