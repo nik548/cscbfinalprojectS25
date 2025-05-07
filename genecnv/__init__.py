@@ -14,6 +14,7 @@ from .smoothing import log_decay_smoothing
 from .baseline import reference_center
 from .segmentation import call_hmm, run_length_filter
 from .preprocessing import preprocess
+from .annotate import annotate_genes_mygene
 
 
 # package‑level API
@@ -26,5 +27,6 @@ __all__ = [
     "reference_center",
     "call_hmm",
     "run_length_filter",
-    "preprocess"
+    "preprocess",
+    "annotate_genes_mygene"
 ]
