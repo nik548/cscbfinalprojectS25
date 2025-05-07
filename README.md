@@ -2,7 +2,7 @@
 
 Adaptive gene‑centric CNV calling pipeline for single‑cell data.
 
-#### Authors
+## Author & Project Information
 - Computational Stem Cell Biology Final Project Spring 2025
 - Nikhil Choudhary, Dhruv Dubey, Elizabeth Zuerbilis
 - Johns Hopkins University EN.580.447
