@@ -8,207 +8,169 @@ from typing import List
 
 
 def annotate_genes_mygene(
-    adata: ad.AnnData,
-    gene_col: str = None,
-    scopes: list = ['symbol', 'ensembl.gene', 'entrezgene'],
-    drop_missing: bool = True,
-    only_std_chromosomes: bool = True  # New parameter
-) -> ad.AnnData:
+    adata,
+    gene_col=None,
+    scopes=['ensembl.gene', 'symbol', 'entrezgene'],
+    species='human'
+):
     """
-    Annotate genes with genomic coordinates using MyGene.info API.
+    Annotate genes with genomic coordinates using MyGene.info API,
+    automatically adding start/end columns and filtering to standard chromosomes.
     
     Parameters
     ----------
     adata : AnnData
         AnnData object with genes to annotate
     gene_col : str, default=None
-        Column in adata.var to use for gene identification. If None, uses the index.
-    scopes : list, default=['symbol', 'ensembl.gene', 'entrezgene']
+        Column in adata.var to use for gene IDs. If None, uses the var index.
+    scopes : list, default=['ensembl.gene', 'symbol', 'entrezgene']
         Fields to search for gene IDs (see MyGene.info documentation)
-    drop_missing : bool, default=True
-        Whether to drop genes that lack coordinate information
-    only_std_chromosomes : bool, default=True
-        If True, only keep genes on standard chromosomes (1-22, X, Y)
+    species : str, default='human'
+        Species for MyGene query
     
     Returns
     -------
     AnnData
-        AnnData with chromosome, start, end annotations in var
+        Filtered AnnData with chromosome, start, end annotations in var,
+        containing only genes with valid annotations on standard chromosomes.
     """
     try:
         import mygene
+        import pandas as pd
+        import re
     except ImportError:
-        raise ImportError("Please install the mygene package: pip install mygene")
+        raise ImportError("Please install required packages: pip install mygene pandas")
     
+    # Create MyGene client
     mg = mygene.MyGeneInfo()
+    
+    # Create a copy of the input AnnData
+    adata_copy = adata.copy()
     
     # Determine which identifiers to use for querying
     if gene_col is None:
         # Use index as gene identifiers
-        var_copy = adata.var.reset_index()
-        gene_identifiers = var_copy.iloc[:, 0].tolist()
-        identifier_col = var_copy.columns[0]
+        gene_identifiers = list(adata_copy.var.index)
     else:
         # Use specified column
-        if gene_col not in adata.var.columns:
+        if gene_col not in adata_copy.var.columns:
             raise ValueError(f"Column '{gene_col}' not found in adata.var")
-        var_copy = adata.var.reset_index()
-        gene_identifiers = adata.var[gene_col].tolist()
-        identifier_col = gene_col
+        gene_identifiers = adata_copy.var[gene_col].tolist()
     
-    # Clean gene identifiers (remove suffixes)
-    clean_identifiers = []
-    original_to_clean = {}
+    # Clean gene identifiers (remove version suffixes and duplicates)
+    clean_ids = []
+    id_map = {}  # Maps clean IDs to original row indices
     
-    for gene_id in gene_identifiers:
+    print(f"Preparing to query {len(gene_identifiers)} gene identifiers...")
+    
+    for i, gene_id in enumerate(gene_identifiers):
         if gene_id is None or pd.isna(gene_id):
-            clean_identifiers.append("")
             continue
             
-        # Convert to string
-        gene_id = str(gene_id)
+        # Convert to string and remove version suffixes (e.g., ENSG00000123456.1 -> ENSG00000123456)
+        clean_id = re.sub(r'\.\d+$', '', str(gene_id))
         
-        # Remove suffixes like -1, -2, -3
-        import re
-        clean_id = re.sub(r'-\d+$', '', gene_id)
-        
-        # Store mapping from original to clean
-        original_to_clean[gene_id] = clean_id
-        clean_identifiers.append(clean_id)
+        # Store mapping from clean ID to row index
+        if clean_id not in id_map:
+            clean_ids.append(clean_id)
+            id_map[clean_id] = []
+        id_map[clean_id].append(i)
     
-    # Create a working copy of var
-    var = adata.var.copy()
-
-    # --- Patch: ensure columns are object dtype to allow new categories ---
-    for col in ['chromosome','start','end']:
-        if col in var.columns and pd.api.types.is_categorical_dtype(var[col]):
-            var[col] = var[col].astype(object)
-    # End patch
+    # Query MyGene.info
+    print(f"Querying MyGene.info for {len(clean_ids)} unique gene identifiers...")
     
-    # Initialize coordinate columns if they don't exist
-    for col in ['chromosome', 'start', 'end']:
-        if col not in var.columns:
-            var[col] = None
-
-    # Find genes that need coordinates
-    missing = var[['chromosome', 'start', 'end']].isnull().any(axis=1)
-    genes_to_query = [clean_identifiers[i] for i, is_missing in enumerate(missing) if is_missing]
+    results = mg.querymany(
+        clean_ids,
+        scopes=scopes,
+        fields=['chromosome', 'genomic_pos', 'genomic_pos_hg19'],
+        species=species,
+        returnall=True
+    )['out']
     
-    # Remove empty strings or None values
-    genes_to_query = [g for g in genes_to_query if g and not pd.isna(g)]
+    # Process results and create annotation DataFrames
+    annotations = {}
     
-    if genes_to_query:
-        print(f"Querying MyGene.info for {len(genes_to_query)} genes...")
+    for result in results:
+        # Skip not found
+        if 'notfound' in result and result['notfound']:
+            continue
+            
+        query = result.get('query', '')
         
-        # Batch query to MyGene
-        try:
-            results = mg.querymany(
-                genes_to_query,
-                scopes=scopes,
-                fields=['chromosome', 'genomic_pos', 'genomic_pos_hg19'],
-                returnall=True
-            )['out']
-        except Exception as e:
-            print(f"Error querying MyGene: {str(e)}")
-            results = []
-        
-        # Process results and update var
-        gene_to_coords = {}
-        
-        for result in results:
-            query = result.get('query', '')
-            if 'notfound' in result and result['notfound']:
+        # Try both genomic_pos fields
+        gp = result.get('genomic_pos')
+        if gp is None:
+            gp = result.get('genomic_pos_hg19')
+            
+        # Skip if no position info
+        if gp is None:
+            continue
+            
+        # Handle different structures of genomic_pos
+        if isinstance(gp, list):
+            if not gp:
                 continue
-                
-            # Try both genomic_pos (GRCh38) and genomic_pos_hg19
-            gp = result.get('genomic_pos')
-            if gp is None:
-                gp = result.get('genomic_pos_hg19')
-                
-            # Skip if no genomic position found
-            if gp is None:
-                continue
-                
-            # Handle different structures of genomic_pos
-            if isinstance(gp, list):
-                # Take the first position if it's a list
-                gp = gp[0] if gp else None
-                
-            # Skip if genomic position is not a dictionary
-            if not isinstance(gp, dict):
-                continue
-                
-            # Extract coordinates
-            chrom = result.get('chromosome') or gp.get('chr')
-            start = gp.get('start')
-            end = gp.get('end')
+            gp = gp[0]  # Take first entry
             
-            # Skip if any coordinate is missing
-            if None in (chrom, start, end):
-                continue
-                
-            # Store coordinates for this gene
-            gene_to_coords[query] = (chrom, start, end)
-        
-        # Update var with coordinates
-        for i, row in var.reset_index().iterrows():
-            gene_id = row[identifier_col]
-            clean_id = original_to_clean.get(gene_id, gene_id)
+        # Skip if not a dictionary
+        if not isinstance(gp, dict):
+            continue
             
-            if clean_id in gene_to_coords:
-                chrom, start, end = gene_to_coords[clean_id]
-                var.at[gene_id, 'chromosome'] = chrom
-                var.at[gene_id, 'start'] = start
-                var.at[gene_id, 'end'] = end
+        # Extract coordinates
+        chrom = result.get('chromosome') or gp.get('chr')
+        start = gp.get('start')
+        end = gp.get('end')
         
-        still_missing = var[['chromosome', 'start', 'end']].isnull().any(axis=1).sum()
-        print(f"After query, {still_missing} genes remain un-annotated.")
-    else:
-        print("All genes already have genomic coordinates - skipping MyGene query.")
+        # Skip if missing any coordinate
+        if None in (chrom, start, end):
+            continue
+            
+        # Store annotations for all occurrences of this gene ID
+        if query in id_map:
+            for idx in id_map[query]:
+                annotations[idx] = {
+                    'chromosome': chrom,
+                    'start': start,
+                    'end': end,
+                    'genomic_pos': f"{start}-{end}"
+                }
     
-    # Filter out genes without coordinates if requested
-    if drop_missing:
-        var_filtered = var.dropna(subset=['chromosome', 'start', 'end'])
-        print(f"Dropped {var.shape[0] - var_filtered.shape[0]} genes without coordinates.")
-        
-        # Filter to only include standard chromosomes if requested
-        if only_std_chromosomes:
-            # Define standard chromosomes
-            std_chroms = [str(i) for i in range(1, 23)] + ['X', 'Y']
-            
-            # Count before filtering
-            pre_filter_count = var_filtered.shape[0]
-            
-            # Filter to standard chromosomes
-            chrom_col = var_filtered['chromosome'].astype(str)
-            var_filtered = var_filtered[chrom_col.isin(std_chroms)]
-            
-            # Report results
-            print(f"Kept only standard chromosomes (1-22, X, Y): {var_filtered.shape[0]} genes")
-            print(f"Removed {pre_filter_count - var_filtered.shape[0]} genes on non-standard chromosomes")
-        
-        # Create new AnnData with filtered genes
-        adata_filtered = adata[:, var_filtered.index].copy()
-        adata_filtered.var = var_filtered
-        return adata_filtered
-    else:
-        # Apply standard chromosome filter if requested
-        if only_std_chromosomes:
-            # Define standard chromosomes
-            std_chroms = [str(i) for i in range(1, 23)] + ['X', 'Y']
-            
-            # Identify genes on standard chromosomes
-            chrom_col = var['chromosome'].astype(str)
-            std_chrom_mask = chrom_col.isin(std_chroms)
-            
-            # Report filtering
-            non_std_count = (~std_chrom_mask & ~var['chromosome'].isnull()).sum()
-            print(f"Keeping {std_chrom_mask.sum()} genes on standard chromosomes (1-22, X, Y)")
-            print(f"Ignoring {non_std_count} genes on non-standard chromosomes")
-            
-            # Set non-standard chromosomes to null
-            var.loc[~std_chrom_mask, ['chromosome', 'start', 'end']] = None
-            
-        # Update the original AnnData object
-        adata.var = var
-        return adata
+    # Define standard chromosomes
+    std_chroms = [str(i) for i in range(1, 23)] + ['X', 'Y']
+    
+    # Create a new var DataFrame with annotations
+    new_var = adata_copy.var.copy()
+    
+    # Initialize coordinate columns
+    for col in ['chromosome', 'start', 'end', 'genomic_pos']:
+        new_var[col] = None
+    
+    # Add annotations
+    for idx, annot in annotations.items():
+        for col, val in annot.items():
+            new_var.iloc[idx, new_var.columns.get_loc(col)] = val
+    
+    # Filter to standard chromosomes and drop missing annotations
+    valid_mask = (
+        new_var['chromosome'].isin(std_chroms) & 
+        ~new_var['start'].isna() & 
+        ~new_var['end'].isna()
+    )
+    
+    # Report statistics
+    total_genes = len(new_var)
+    annotated_genes = (~new_var['chromosome'].isna()).sum()
+    std_chrom_genes = valid_mask.sum()
+    
+    print(f"Annotation summary:")
+    print(f"  Total genes: {total_genes}")
+    print(f"  Successfully annotated: {annotated_genes} ({annotated_genes/total_genes:.1%})")
+    print(f"  Standard chromosomes (1-22,X,Y): {std_chrom_genes} ({std_chrom_genes/total_genes:.1%})")
+    
+    # Filter the AnnData object
+    filtered_var = new_var[valid_mask]
+    filtered_adata = adata_copy[:, filtered_var.index].copy()
+    filtered_adata.var = filtered_var
+    
+    print(f"Returning filtered AnnData with {filtered_adata.n_vars} genes")
+    return filtered_adata
