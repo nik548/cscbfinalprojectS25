@@ -1,6 +1,8 @@
-# ──────────────────────────────────────────────────────────────────────────────
-# 2) Bin‑level expression
-# ──────────────────────────────────────────────────────────────────────────────
+import numpy as np
+import scanpy as sc
+from scipy.sparse import issparse
+from typing import List
+
 def bin_expression_matrix(
     adata: sc.AnnData,
     bins: List[List[str]]
