@@ -1,3 +1,8 @@
+import scanpy as sc
+import anndata as ad
+from typing import List, Optional
+from scipy.sparse import issparse
+
 def preprocess(
     adata: sc.AnnData,
 
