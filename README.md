@@ -11,13 +11,8 @@ ALL OF THIS BELOW NEEDS TO BE TESTED AND VALIDATED (Currently all GPT):
 ## Installation
 
 ```bash
-pip install cnasearch
-```
-
-Or install directly from GitHub:
-
-```bash
-pip install git+https://github.com/yourteam/cnasearch.git
+!pip install git+https://github.com/nik548/cscbfinalprojectS25.git
+import cnasearch as cna
 ```
 
 ## Features
