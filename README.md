@@ -2,10 +2,11 @@
 
 Adaptive gene‑centric CNV calling pipeline for single‑cell data.
 
+#### Authors
 - Computational Stem Cell Biology Final Project Spring 2025
 - Nikhil Choudhary, Dhruv Dubey, Elizabeth Zuerbilis
 - Johns Hopkins University EN.580.447
-- 
+
 ## Overview
 
 **genecnv** provides a complete pipeline to detect copy number variations (CNVs) at the gene level in single-cell RNA‑seq datasets. It implements a novel _adaptive gene‑centric binning_ strategy that partitions the genome into bins of approximately equal gene count, preserving local genomic context while enabling robust statistical smoothing and HMM segmentation.
