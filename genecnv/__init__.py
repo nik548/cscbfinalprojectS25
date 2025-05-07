@@ -13,7 +13,7 @@ from .expression import bin_expression_matrix
 from .smoothing import log_decay_smoothing
 from .baseline import reference_center
 from .segmentation import call_hmm, run_length_filter
-from .preprocessing import preprocess
+from .preprocess import preprocess
 from .annotate import annotate_genes_mygene
 
 
