@@ -6,6 +6,7 @@ CNAsearch is a Python package for detecting Copy Number Alterations (CNAs) in si
 - Nikhil Choudhary, Dhruv Dubey, Elizabeth Zuerbilis
 - Johns Hopkins University EN.580.447 
 
+ALL OF THIS BELOW NEEDS TO BE TESTED AND VALIDATED (Currently all GPT):
 
 ## Installation
 
