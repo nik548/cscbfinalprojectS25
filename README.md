@@ -37,13 +37,11 @@ import genecnv as genecnv
 
 ### Setup
 ```python
-!pip install scanpy python-igraph leidenalg scipy umap-learn anndata hmmlearn mygene
+# Install core dependencies
+!pip install scanpy python-igraph scipy anndata hmmlearn mygene
 
-from google.colab import drive
-drive.mount('/content/drive')
-%cd /content/drive/My Drive/CSCB_Final/
-%ls
 
+# Standard imports and warning suppression
 import warnings
 warnings.filterwarnings("ignore", category=FutureWarning)
 import os, sys
@@ -62,22 +60,29 @@ from sklearn.cluster import KMeans
 from hmmlearn import hmm
 import mygene
 
+# Install and import the genecnv package from GitHub
 !pip install git+https://github.com/nik548/cscbfinalprojectS25.git
-import cnasearch as cna
+import genecnv as genecnv
 ```
+
 ### Apply Pipeline to Detect CNAs
 ```python
-import scanpy as sc
-from genecnv import run_adaptive_cnv_pipeline, annotate_cnv_calls
+from genecnv.pipeline import run_adaptive_cnv_pipeline, annotate_cnv_calls
+from genecnv.annotate import annotate_genes_mygene
+from genecnv.preprocess import preprocess
 
 # Load or create an AnnData object (adata)
 adata = sc.read_h5ad("your_data.h5ad")
 
-# (Optional) annotate genes if coordinates missing
+
+# (Optional) Annotate genes if coordinates missing
 adata = annotate_genes_mygene(adata)
 
+# (Optional) Clean data 
+adata_clean = preprocess(adata)
+
 # Run the full CNV pipeline
-adata, bins, centers, calls = run_adaptive_cnv_pipeline(
+adata_with_calls, bins, centers, calls = run_adaptive_cnv_pipeline(
     adata,
     cell_type_key="cell_type",
     target_genes_per_bin=100,
@@ -87,36 +92,14 @@ adata, bins, centers, calls = run_adaptive_cnv_pipeline(
     min_run=2
 )
 
-# Extract CNV regions per cell
-cnv_regions = adata.obs["cnv_regions"]
+annotate_cnv_calls(adata_with_calls, calls, bins, centers, test = True)
+# Now adata.obs contains CNA annotations ("cnv_regions")
 
-
-# Now adata.obs contains CNA annotations ("cna_regions")
 ```
-
-## Advanced Usage
-
-For more advanced usage, including threshold calibration:
-
-```python
-best_t = cna.calibrate_threshold(
-    adata,
-    gt_col='known_cnvs', # column with ground truth labels
-    window_size=1_000_000,
-    min_genes_per_window=10,
-    ref_method='variance',
-    ref_frac=0.15,
-    min_run=2,
-    overlap_fraction=0.5,
-    threshs=np.linspace(0.3, 0.7, 9)
-)
-```
-
-See the examples directory for more detailed use cases.
 
 ## Citation
 
-If you use CNAsearch in your research, please cite us.
+If you use genecnv in your research, please cite us.
 
 ## License
 
