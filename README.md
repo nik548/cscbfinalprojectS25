@@ -26,7 +26,7 @@ import cnasearch as cna
 
 ### Setup
 ```python
-!pip install scanpy python-igraph leidenalg scipy umap-learn anndata hmmlearn
+!pip install scanpy python-igraph leidenalg scipy umap-learn anndata hmmlearn mygene
 
 from google.colab import drive
 drive.mount('/content/drive')
@@ -49,6 +49,7 @@ from scipy.sparse import csr_matrix, issparse
 import re
 from sklearn.cluster import KMeans
 from hmmlearn import hmm
+import mygene
 
 !pip install git+https://github.com/nik548/cscbfinalprojectS25.git
 import cnasearch as cna
