@@ -70,7 +70,7 @@ import genecnv as genecnv
 from genecnv import run_adaptive_cnv_pipeline, annotate_cnv_calls, annotate_genes_mygene, preprocess
 
 # Load or create an AnnData object (adata)
-adata = sc.read_h5ad("your_data.h5ad")
+adata = ad.read_h5ad("your_data.h5ad")
 
 
 # (Optional) Annotate genes if coordinates missing
