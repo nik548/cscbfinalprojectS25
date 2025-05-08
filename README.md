@@ -101,6 +101,9 @@ All notebooks for task2A can be found in the task2A directory.
 - Hyperparameter_Tuning.ipynb find the optimal hyperparameters for running genecnv and also evaluates the effect of downsampling on genecnv model results.
 - Benchmarking.ipynb contains the results of running inferCNV on the same test dataset as a point of comparison for our model.
 
+All notebooks for task3 can be found in the task3 directory. 
+- 
+
 
 ## Citation
 
