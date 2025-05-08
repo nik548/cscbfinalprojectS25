@@ -98,7 +98,8 @@ annotate_cnv_calls(adata_with_calls, calls, bins, centers)
 ### Task Analysis Notebooks
 All notebooks for task2A can be found in the task2A directory. 
 - Analyze_Method_Performance.ipynb analyzes genecnv's performance in terms of standard metrics such as accuracy, precision, specificity and recall on the provided data for benchmarking that contains simulated ground truth calls on three chromosomes.
-- Hyperparameter_Tuning.ipynb find the optimal hyperparameters for running genecnv and also evaluates the effect of downsampling on genecnv model results.  
+- Hyperparameter_Tuning.ipynb find the optimal hyperparameters for running genecnv and also evaluates the effect of downsampling on genecnv model results.
+- Benchmarking.ipynb contains the results of running inferCNV on the same test dataset as a point of comparison for our model.
 
 
 ## Citation
