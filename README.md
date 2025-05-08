@@ -103,7 +103,9 @@ All notebooks for task2A can be found in the task2A directory:
 - Benchmarking.ipynb contains the results of running inferCNV on the same test dataset as a point of comparison for our model.
 
 All notebooks for task3 can be found in the task3 directory:
-- 
+- task3_test1_2dGastruloids: Application of genecnv to 2D Gastruloid dataset
+- task3_test2_neurons: Application of genecnv to iPSC-derived Hypothalamic Neuron dataset
+- task3_test3_embryoid_bodies: Application of genecnv to Embryoid Body dataset
 
 
 ## Citation
